@@ -1,163 +1,96 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import cv2
 
 class MarchingSquares:
     def __init__(self, image_path, threshold=127):
-        # Charger et prétraiter l'image
-        self.original_image = cv2.imread(image_path)
-        if self.original_image is None:
+        # Charger l'image
+        img = cv2.imread(image_path)
+        if img is None:
             raise ValueError("Impossible de charger l'image")
-            
-        # Convertir en niveaux de gris si l'image est en couleur
-        if len(self.original_image.shape) == 3:
-            self.grid = cv2.cvtColor(self.original_image, cv2.COLOR_BGR2GRAY)
-        else:
-            self.grid = self.original_image.copy()
-            
-        # Normaliser les valeurs entre 0 et 1
-        self.grid = self.grid.astype(float) / 255.0
         
-        self.threshold = threshold / 255.0  # Normaliser le seuil aussi
+        # Convertir en niveaux de gris et normaliser
+        self.grid = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY).astype(float) / 255.0
+        self.original_image = img
+        self.threshold = threshold / 255.0
         self.rows, self.cols = self.grid.shape
-        self.contours = []
         
-        # Table de correspondance des cas
+        # Table des cas de Marching Squares (simplifié pour la lisibilité)
         self.CASES = {
+            # Pas de contour
             0: [],
-            1: [[[0.5, 0], [0, 0.5]]],
-            2: [[[1, 0.5], [0.5, 0]]],
-            3: [[[1, 0.5], [0, 0.5]]],
-            4: [[[1, 0.5], [0.5, 1]]],
+            15: [],
+            # Contours simples
+            1: [[[0.5, 0], [0, 0.5]]],    # ╝
+            2: [[[1, 0.5], [0.5, 0]]],    # ╚
+            3: [[[1, 0.5], [0, 0.5]]],    # ═
+            4: [[[1, 0.5], [0.5, 1]]],    # ╔
+            6: [[[0.5, 0], [0.5, 1]]],    # ║
+            7: [[[0, 0.5], [0.5, 1]]],    # ╗
+            8: [[[0, 0.5], [0.5, 1]]],    # ╝
+            9: [[[0.5, 0], [0.5, 1]]],    # ║
+            11: [[[1, 0.5], [0.5, 1]]],   # ╔
+            12: [[[0, 0.5], [1, 0.5]]],   # ═
+            13: [[[0.5, 0], [1, 0.5]]],   # ╚
+            14: [[[0.5, 0], [0, 0.5]]],   # ╗
+            # Cas ambigus
             5: [[[0.5, 0], [0, 0.5]], [[1, 0.5], [0.5, 1]]],
-            6: [[[0.5, 0], [0.5, 1]]],
-            7: [[[0, 0.5], [0.5, 1]]],
-            8: [[[0, 0.5], [0.5, 1]]],
-            9: [[[0.5, 0], [0.5, 1]]],
-            10: [[[0.5, 0], [1, 0.5]], [[0, 0.5], [0.5, 1]]],
-            11: [[[1, 0.5], [0.5, 1]]],
-            12: [[[0, 0.5], [1, 0.5]]],
-            13: [[[0.5, 0], [1, 0.5]]],
-            14: [[[0.5, 0], [0, 0.5]]],
-            15: []
+            10: [[[0.5, 0], [1, 0.5]], [[0, 0.5], [0.5, 1]]]
         }
 
-    def preprocess_image(self, blur_size=5, use_adaptive_threshold=False):
-        """Prétraitement de l'image pour améliorer la détection des contours"""
-        # Appliquer un flou gaussien pour réduire le bruit
-        self.grid = cv2.GaussianBlur(self.grid, (blur_size, blur_size), 0)
-        
-        if use_adaptive_threshold:
-            # Utiliser un seuillage adaptatif
-            binary = cv2.adaptiveThreshold(
-                (self.grid * 255).astype(np.uint8),
-                255,
-                cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                cv2.THRESH_BINARY,
-                11,
-                2
-            )
-            self.grid = binary.astype(float) / 255.0
-
-    def get_cell_configuration(self, row, col):
-        """Calcule la configuration d'une cellule basée sur ses quatre coins."""
+    def get_square_value(self, row, col):
+        """Détermine la configuration d'une cellule."""
         value = 0
+        # Vérifier les 4 coins dans cet ordre: bas-gauche, bas-droite, haut-droite, haut-gauche
         corners = [
-            self.grid[row+1, col],     # Coin bas gauche
-            self.grid[row+1, col+1],   # Coin bas droit
-            self.grid[row, col+1],     # Coin haut droit
-            self.grid[row, col]        # Coin haut gauche
+            (row+1, col), (row+1, col+1),
+            (row, col+1), (row, col)
         ]
         
-        for i, corner in enumerate(corners):
-            if corner > self.threshold:
+        for i, (r, c) in enumerate(corners):
+            if self.grid[r, c] > self.threshold:
                 value |= 1 << i
         
         return value
 
     def generate_contours(self):
-        """Génère les contours pour toute la grille."""
-        self.contours = []  # Réinitialiser les contours
+        """Génère les segments de contour."""
+        contours = []
         
         for row in range(self.rows - 1):
             for col in range(self.cols - 1):
-                cell_value = self.get_cell_configuration(row, col)
-                segments = self.CASES[cell_value]
+                # Obtenir la configuration de la cellule
+                case = self.get_square_value(row, col)
                 
-                for segment in segments:
+                # Générer les segments pour cette configuration
+                for segment in self.CASES[case]:
                     start = [col + segment[0][0], row + segment[0][1]]
                     end = [col + segment[1][0], row + segment[1][1]]
-                    self.contours.append([start, end])
+                    contours.append([start, end])
         
-        return self.contours
+        return contours
 
-    def draw_result(self, line_thickness=1):
-        """Dessine les contours sur l'image originale."""
-        # Créer une copie de l'image originale
+    def draw_contours(self, thickness=1):
+        """Dessine les contours sur l'image."""
         result = self.original_image.copy()
+        contours = self.generate_contours()
         
-        # Convertir les coordonnées des contours en points pour OpenCV
-        for segment in self.contours:
-            start_point = (int(segment[0][0]), int(segment[0][1]))
-            end_point = (int(segment[1][0]), int(segment[1][1]))
-            
-            cv2.line(result, start_point, end_point, (0, 255, 0), line_thickness)
+        for segment in contours:
+            pt1 = (int(segment[0][0]), int(segment[0][1]))
+            pt2 = (int(segment[1][0]), int(segment[1][1]))
+            cv2.line(result, pt1, pt2, (0, 255, 0), thickness)
         
         return result
 
-    def plot_debug(self):
-        """Affiche les différentes étapes du traitement pour le débogage."""
-        plt.figure(figsize=(15, 5))
-        
-        # Image originale
-        plt.subplot(131)
-        plt.imshow(cv2.cvtColor(self.original_image, cv2.COLOR_BGR2RGB))
-        plt.title('Image originale')
-        
-        # Grille en niveaux de gris
-        plt.subplot(132)
-        plt.imshow(self.grid, cmap='gray')
-        plt.title('Grille normalisée')
-        
-        # Résultat avec contours
-        plt.subplot(133)
-        result = self.draw_result()
-        plt.imshow(cv2.cvtColor(result, cv2.COLOR_BGR2RGB))
-        plt.title('Contours détectés')
-        
-        plt.tight_layout()
-        plt.show()
-
-# Exemple d'utilisation
-def process_image(image_path, threshold=127, blur_size=5, use_adaptive_threshold=False):
-    """Fonction utilitaire pour traiter une image."""
-    # Créer l'instance de MarchingSquares
+# Utilisation simple
+def process_image(image_path, threshold=127):
+    # Créer et exécuter l'algorithme
     ms = MarchingSquares(image_path, threshold)
+    result = ms.draw_contours()
     
-    # Prétraiter l'image
-    ms.preprocess_image(blur_size, use_adaptive_threshold)
-    
-    # Générer les contours
-    ms.generate_contours()
-    
-    # Afficher les résultats
-    ms.plot_debug()
-    
-    # Retourner l'image avec les contours
-    return ms.draw_result()
-
-# Exemple d'utilisation
-if __name__ == "__main__":
-    # Remplacer par le chemin de votre image
-    image_path = "votre_image.jpg"
-    result = process_image(
-        image_path,
-        threshold=127,  # Seuil pour la binarisation (0-255)
-        blur_size=5,    # Taille du flou gaussien
-        use_adaptive_threshold=False  # Utiliser ou non le seuillage adaptatif
-    )
-    
-    # Afficher le résultat dans une fenêtre OpenCV
-    cv2.imshow('Résultat', result)
+    # Afficher le résultat
+    cv2.imshow('Contours', result)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
+
+if __name__ == "__main__":
+    process_image("image.jpg", threshold=127)
