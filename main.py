@@ -11,7 +11,7 @@ class MarchingSquares:
 
         # Convert to grayscale and normalize
         self.grid = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY).astype(float) / 255.0
-        self.original_image = img
+        self.shape = img.shape[:2]  # Keep only height and width
         self.threshold = threshold / 255.0
         self.rows, self.cols = self.grid.shape
 
@@ -71,14 +71,16 @@ class MarchingSquares:
         return contours
 
     def draw_contours(self, thickness=1):
-        """Draws contours on the image."""
-        result = self.original_image.copy()
+        """Draws contours on a white background."""
+        # Create a white background
+        result = np.full((*self.shape, 3), 255, dtype=np.uint8)
         contours = self.generate_contours()
 
+        # Draw black lines
         for segment in contours:
             pt1 = (int(segment[0][0]), int(segment[0][1]))
             pt2 = (int(segment[1][0]), int(segment[1][1]))
-            cv2.line(result, pt1, pt2, (0, 255, 0), thickness)
+            cv2.line(result, pt1, pt2, (0, 0, 0), thickness)
 
         return result
 
