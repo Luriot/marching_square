@@ -93,4 +93,4 @@ def process_image(image_path, threshold=127):
     cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-    process_image("image.jpg", threshold=127)
+    process_image("image.png", threshold=127)
