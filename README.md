@@ -12,6 +12,16 @@ Cette implémentation Python de l'algorithme Marching Squares génère des ligne
 - Sortie en lignes noires sur fond blanc
 - Implémentation simple et efficace
 
+## Structure du Projet
+
+```
+marching_squares/
+│
+├── marching_squares.py     # Fichier principal contenant l'algorithme (ancien main.py)
+├── image.png               # Image d'entrée qui sera traitée par Marching Squares
+└── README.md              # Ce fichier
+```
+
 ## Installation
 
 ### Prérequis
