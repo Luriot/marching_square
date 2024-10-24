@@ -3,19 +3,23 @@ import cv2
 
 
 class MarchingSquares:
-    def __init__(self, image_path, threshold=127):
-        # Load image
+    def __init__(self, image_path, threshold=None):
         img = cv2.imread(image_path)
         if img is None:
             raise ValueError("Unable to load image")
 
-        # Convert to grayscale and normalize
         self.grid = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY).astype(float) / 255.0
         self.shape = img.shape[:2]  # Keep only height and width
-        self.threshold = threshold / 255.0
+
+        if threshold is None:
+            self.threshold = np.mean(self.grid)
+            print(f"Automatic threshold set to: {self.threshold:.3f}")
+        else:
+            self.threshold = threshold / 255.0
+            print(f"Manual threshold set to: {self.threshold:.3f}")
+
         self.rows, self.cols = self.grid.shape
 
-        # Marching Squares case table (simplified for readability)
         self.CASES = {
             # No contour
             0: [],
@@ -39,9 +43,7 @@ class MarchingSquares:
         }
 
     def get_square_value(self, row, col):
-        """Determines the configuration of a cell."""
         value = 0
-        # Check 4 corners in this order: bottom-left, bottom-right, top-right, top-left
         corners = [
             (row + 1, col), (row + 1, col + 1),
             (row, col + 1), (row, col)
@@ -54,15 +56,12 @@ class MarchingSquares:
         return value
 
     def generate_contours(self):
-        """Generates contour segments."""
         contours = []
 
         for row in range(self.rows - 1):
             for col in range(self.cols - 1):
-                # Get cell configuration
                 case = self.get_square_value(row, col)
 
-                # Generate segments for this configuration
                 for segment in self.CASES[case]:
                     start = [col + segment[0][0], row + segment[0][1]]
                     end = [col + segment[1][0], row + segment[1][1]]
@@ -71,12 +70,9 @@ class MarchingSquares:
         return contours
 
     def draw_contours(self, thickness=1):
-        """Draws contours on a white background."""
-        # Create a white background
         result = np.full((*self.shape, 3), 255, dtype=np.uint8)
         contours = self.generate_contours()
 
-        # Draw black lines
         for segment in contours:
             pt1 = (int(segment[0][0]), int(segment[0][1]))
             pt2 = (int(segment[1][0]), int(segment[1][1]))
@@ -85,15 +81,16 @@ class MarchingSquares:
         return result
 
 
-def process_image(image_path, output_path="output.png", threshold=127):
-    # Create and run algorithm
+def process_image(image_path, output_path="output.png", threshold=None, thickness=1):
     ms = MarchingSquares(image_path, threshold)
-    result = ms.draw_contours()
+    result = ms.draw_contours(thickness)
 
-    # Save the result
     cv2.imwrite(output_path, result)
     print(f"Result saved to {output_path}")
 
 
 if __name__ == "__main__":
-    process_image("image.png", "output.png", threshold=127)
+    process_image("image.png", "output_auto.png")
+    process_image("image.png", "output_manual.png", threshold=127)
+    process_image("image.png", "output_auto_thick.png", thickness=2)
+    process_image("image.png", "output_manual_thick.png", threshold=127, thickness=2)
