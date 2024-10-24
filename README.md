@@ -1,5 +1,7 @@
 # Générateur de Contours d'Images par Marching Squares
 
+![License](https://img.shields.io/badge/license-MIT-green)
+
 Cette implémentation Python de l'algorithme Marching Squares génère des lignes de contour à partir d'images. Elle crée des dessins en noir et blanc épurés qui capturent les formes et les frontières essentielles de l'image d'entrée.
 
 ## Fonctionnalités
@@ -24,9 +26,7 @@ pip install numpy opencv-python
 - NumPy
 - OpenCV (cv2)
 
-## Utilisation
-
-### Utilisation Simple
+### Utilisation
 
 ```python
 from marching_squares import process_image
@@ -37,24 +37,8 @@ process_image("entree.jpg", "sortie.png")
 # Utilisation du seuil manuel (0-255)
 process_image("entree.jpg", "sortie.png", threshold=127)
 
-# Ajustement de l'épaisseur des lignes
+# Ajustement de l'épaisseur des lignes (1 par défaut)
 process_image("entree.jpg", "sortie.png", threshold=127, thickness=2)
-```
-
-### Utilisation Avancée
-
-```python
-from marching_squares import MarchingSquares
-
-# Création d'une instance avec seuil automatique
-ms = MarchingSquares("entree.jpg")
-
-# Création d'une instance avec seuil manuel
-ms = MarchingSquares("entree.jpg", threshold=127)
-
-# Génération et sauvegarde des contours
-result = ms.draw_contours(thickness=1)
-cv2.imwrite("sortie.png", result)
 ```
 
 ## Fonctionnement
@@ -95,8 +79,8 @@ Le programme génère :
 
 ## Licence
 
-Ce projet est sous licence MIT - voir le fichier LICENSE pour plus de détails.
+Ce projet est sous licence MIT. Consultez le fichier [LICENSE](LICENSE) pour plus d’informations.
 
 ## Auteur
 
-[Luriot]
+**Luriot** - [GitHub](https://github.com/Luriot)
