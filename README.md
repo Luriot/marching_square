@@ -51,6 +51,11 @@ process_image("entree.jpg", "sortie.png", threshold=127)
 process_image("entree.jpg", "sortie.png", threshold=127, thickness=2)
 ```
 
+### Sélection du Seuil
+
+- **Automatique** : Utilise la valeur moyenne de l'image comme seuil
+- **Manuel** : Accepte une valeur entre 0-255 pour définir le seuil manuellement
+
 ## Fonctionnement
 
 L'algorithme Marching Squares fonctionne en :
@@ -60,26 +65,6 @@ L'algorithme Marching Squares fonctionne en :
 3. Analysant des grilles de 2x2 pixels pour déterminer les motifs de contour
 4. Dessinant les segments de ligne correspondants
 5. Combinant tous les segments pour créer le dessin final des contours
-
-### Sélection du Seuil
-
-- **Automatique** : Utilise la valeur moyenne de l'image comme seuil
-- **Manuel** : Accepte une valeur entre 0-255 pour définir le seuil manuellement
-
-## Exemples
-
-Voici comment différentes valeurs de seuil affectent la sortie :
-
-```python
-# Contours très détaillés
-process_image("image.jpg", "detaille.png", threshold=64)
-
-# Contours équilibrés (automatique)
-process_image("image.jpg", "equilibre.png")
-
-# Contours minimaux
-process_image("image.jpg", "minimal.png", threshold=192)
-```
 
 ## Sortie
 
